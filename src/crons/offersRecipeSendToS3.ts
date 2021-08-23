@@ -1,8 +1,6 @@
 import fs from "fs";
 import AWS from 'aws-sdk'
 import consola from "consola";
-import {getFileSize} from "../utils";
-import {redis} from "../redis";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
 import SendData = ManagedUpload.SendData;
 import * as dotenv from "dotenv";
@@ -16,16 +14,18 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
-const tempFileName = process.env.OFFERS_RECIPE_PATH+'.gz'
-const offersFileS3RecipePath = 'unprocessed/offersRecipe.json.gz'
+const tempFileName = process.env.OFFERS_RECIPE_PATH + '.gz' || ''
 export const uploadFileToS3Bucket = async () => {
   try {
 
     fs.readFile(tempFileName!, (err, data) => {
       if (err) throw err;
+      let s3Key = process.env.S3_OFFERS_RECIPE_PATH || ''
+      let s3BucketName = process.env.S3_BUCKET_NAME || ''
+
       const params = {
-        Bucket: 'adcenter-redshift-logs-staging',
-        Key: offersFileS3RecipePath,
+        Bucket: s3BucketName,
+        Key: s3Key,
         Body: data
       };
       s3.upload(params, (err: Error, data: SendData) => {
@@ -34,12 +34,7 @@ export const uploadFileToS3Bucket = async () => {
         }
         consola.info(`File uploaded successfully at ${data.Location}`);
       });
-      // s3.upload(params, function(s3Err, data) {
-      //   if (s3Err) throw s3Err
-      //   console.log(`File uploaded successfully at ${data.Location}`)
-      // });
     });
-
 
   } catch (error) {
     console.error('s3 upload error:', error)
