@@ -85,7 +85,7 @@ io.on('connection', (socket: Socket) => {
   })
 
   socket.on('disconnect', () => {
-    consola.warn('client disconnected');
+    consola.warn(`client disconnected ID:${socket.id}`);
   })
 });
 
@@ -101,6 +101,6 @@ if (process.env.ENV === 'development') {
 setTimeout(setOffersRecipe, 6000) // 6000 -> 6 sec
 setTimeout(setFileSizeOffers, 20000) // 6000 -> 6 sec
 
-const host: any = process.env.HOST
-const port: any = process.env.PORT
+const host: string = process.env.HOST || ''
+const port: number = parseInt(process.env.PORT || '3001')
 httpServer.listen(port, host, (): void => console.log(`server is running on ${port}`));
