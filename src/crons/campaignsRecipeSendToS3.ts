@@ -14,13 +14,13 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
-const tempFileName = process.env.OFFERS_RECIPE_PATH + '.gz' || ''
-export const uploadOffersFileToS3Bucket = async () => {
+const tempFileName = process.env.CAMPAIGNS_RECIPE_PATH + '.gz' || ''
+export const uploadCampaignsFileToS3Bucket = async () => {
   try {
 
     fs.readFile(tempFileName!, (err, data) => {
       if (err) throw err;
-      let s3Key = process.env.S3_OFFERS_RECIPE_PATH || ''
+      let s3Key = process.env.S3_CAMPAIGNS_RECIPE_PATH || ''
       let s3BucketName = process.env.S3_BUCKET_NAME || ''
 
       const params = {
@@ -32,7 +32,7 @@ export const uploadOffersFileToS3Bucket = async () => {
         if (err) {
           consola.error(err);
         }
-        consola.info(`File offers uploaded successfully at ${data.Location}`);
+        consola.info(`File campaigns uploaded successfully at ${data.Location}`);
       });
     });
 

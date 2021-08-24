@@ -22,8 +22,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/server.ts",
-    "dev1": "ts-node-dev --files --respawn src/server.ts",
+    "dev": "ts-node-dev --files --respawn src/server.ts",
     "build": "tsc -p ."
   },
   "repository": {
