@@ -11,6 +11,8 @@ import express, {Application, Request, Response, NextFunction} from 'express'
 import {setOffersRecipe} from "./crons/offersRecipe"
 import {setFileSizeOffers} from "./crons/offersFileSize";
 import {redis} from "./redis";
+import {setCampaignsRecipe} from "./crons/campaignsRecipe";
+import {setFileSizeCampaigns} from "./crons/campaignsFileSize";
 
 const app: Application = express();
 const httpServer = createServer(app);
@@ -84,6 +86,20 @@ io.on('connection', (socket: Socket) => {
     }
   })
 
+  socket.on('fileSizeCampaignsCheck', async (fileSizeCampaignsCheck) => {
+    try {
+      let fileSizeCampaignsRecipe = await redis.get(`campaignsSize`)
+      if (fileSizeCampaignsCheck !== fileSizeCampaignsRecipe) {
+        consola.warn(`fileSize campaigns  is different `)
+        consola.info(`fileSizeCampaignsCheck:${fileSizeCampaignsCheck}, fileSizeCampaignsRecipe:${fileSizeCampaignsRecipe}`)
+        io.to(socket.id).emit("fileSizeCampaignsCheck", fileSizeCampaignsCheck)
+      }
+
+    } catch (e) {
+      console.log('fileSizeCampaignsCheckError:', e)
+    }
+  })
+
   socket.on('disconnect', () => {
     consola.warn(`client disconnected ID:${socket.id}`);
   })
@@ -93,13 +109,19 @@ io.on('connect', async (socket: Socket) => {
   consola.info(`connect id`, socket.id)
 })
 
-if (process.env.ENV === 'development') {
+if (process.env.ENV !== 'development') {
+  setInterval(setCampaignsRecipe, 60000) // 60000 -> 60 sec
   setInterval(setOffersRecipe, 60000) // 60000 -> 60 sec
+
   setInterval(setFileSizeOffers, 20000) // 6000 -> 6 sec
+  setInterval(setFileSizeCampaigns, 20000) // 6000 -> 6 sec
 }
 
+setTimeout(setCampaignsRecipe, 6000) // 6000 -> 6 sec
 setTimeout(setOffersRecipe, 6000) // 6000 -> 6 sec
+
 setTimeout(setFileSizeOffers, 20000) // 6000 -> 6 sec
+setTimeout(setFileSizeCampaigns, 20000) // 6000 -> 6 sec
 
 const host: string = process.env.HOST || ''
 const port: number = parseInt(process.env.PORT || '3001')

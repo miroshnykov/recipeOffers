@@ -3,16 +3,15 @@ import fs from "fs";
 import JSONStream from "JSONStream";
 import consola from "consola";
 import fileSystem from "fs";
-import {uploadOffersFileToS3Bucket} from "./offersRecipeSendToS3";
+import {getCampaigns} from "../models/campaignsModel";
 import {compressFileZlibSfl, deleteFile} from "../utils";
-import {getOffers} from "../models/offersModel";
-
-export const setOffersRecipe = async () => {
+import {uploadCampaignsFileToS3Bucket} from "./campaignsRecipeSendToS3";
+export const setCampaignsRecipe = async () => {
 
   try {
-    let offers = await getOffers()
+    let offers = await getCampaigns()
 
-    const filePath = process.env.OFFERS_RECIPE_PATH
+    const filePath = process.env.CAMPAIGNS_RECIPE_PATH
 
     let transformStream = JSONStream.stringify();
     let outputStream = fileSystem.createWriteStream(filePath!);
@@ -32,10 +31,11 @@ export const setOffersRecipe = async () => {
         console.log(`File Offers(count:${offers?.length}) created path:${filePath} `)
       }
     )
-    setTimeout(uploadOffersFileToS3Bucket, 6000)
+    setTimeout(uploadCampaignsFileToS3Bucket, 6000)
 
   } catch (e) {
     consola.error('setOffersToRedisError:', e)
   }
 
 }
+
