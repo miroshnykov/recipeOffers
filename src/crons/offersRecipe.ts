@@ -6,6 +6,7 @@ import fileSystem from "fs";
 import {uploadOffersFileToS3Bucket} from "./offersRecipeSendToS3";
 import {compressFileZlibSfl, deleteFile} from "../utils";
 import {getOffers} from "../models/offersModel";
+import {setFileSizeOffers} from "./offersFileSize";
 
 export const setOffersRecipe = async () => {
 
@@ -29,13 +30,14 @@ export const setOffersRecipe = async () => {
 
         await compressFileZlibSfl(filePath!)
         await deleteFile(filePath!)
-        console.log(`File Offers(count:${offers?.length}) created path:${filePath} `)
+        consola.success(`File Offers(count:${offers?.length}) created path:${filePath} `)
       }
     )
     setTimeout(uploadOffersFileToS3Bucket, 6000)
+    setTimeout(setFileSizeOffers, 10000)
 
   } catch (e) {
-    consola.error('setOffersToRedisError:', e)
+    consola.error('create offers recipe Error:', e)
   }
 
 }

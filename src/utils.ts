@@ -2,6 +2,33 @@ import {promises as fs} from "fs";
 import consola from "consola";
 import zlib from "zlib";
 import file from "fs";
+import crypto from "crypto";
+import * as dotenv from "dotenv";
+
+dotenv.config();
+const encLength: number = Number(process.env.ENCRIPTION_IV_LENGTH)
+const encKey: string = process.env.ENCRIPTION_KEY || ''
+export const encrypt = (text: string) => {
+  let iv = crypto.randomBytes(encLength)
+  let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(encKey), iv)
+  let encrypted = cipher.update(text)
+  encrypted = Buffer.concat([encrypted, cipher.final()])
+  return iv.toString('hex') + ':' + encrypted.toString('hex')
+}
+
+export const decrypt = (text: string) => {
+  let textParts = text.split(':')
+  // @ts-ignore
+  let iv = Buffer.from(textParts.shift(), 'hex')
+  let encryptedText = Buffer.from(textParts.join(':'), 'hex')
+  let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encKey), iv)
+  let decrypted = decipher.update(encryptedText)
+
+  decrypted = Buffer.concat([decrypted, decipher.final()])
+
+  return decrypted.toString()
+}
+
 
 export const getFileSize = async (filename: string) => {
   try {
@@ -21,28 +48,28 @@ export const compressFileZlibSfl = (fileName: string) => {
     read.pipe(compress).pipe(write)
     compress.on('unpipe', (compression) => {
       if (compression._readableState.ended === true) {
-        // console.log('Compression stream ended');
+        // consola.info('Compression stream ended');
         return new Promise((resolve) => {
           write.on('finish', () => {
-            // console.log('Compression fully finished');
+            //consola.success('Compression fully finished');
             resolve(write);
           })
         }).then(() => {
           // console.log(`sfl resolve fileName:${fileName}`)
           resolve(fileName)
         }).catch((err) => {
-          console.log(`sfl unpipe error fileName:${fileName}`, err)
+          consola.error(`sfl unpipe error fileName:${fileName}`, err)
         })
       }
     })
     compress.on('errors', (err) => {
-      console.log(`sfl compress error: fileName:${fileName}`, err)
+      consola.error(`sfl compress error: fileName:${fileName}`, err)
     })
     write.on('error', (err) => {
-      console.log(`sfl write error: fileName:${fileName}`, err)
+      consola.error(`sfl write error: fileName:${fileName}`, err)
     })
   }).catch((err) => {
-    console.log(`compressFileZlibError fileName:${fileName}`, err)
+    consola.error(`compressFileZlibError fileName:${fileName}`, err)
   })
 }
 
@@ -52,13 +79,26 @@ export const deleteFile = (filePath: string) => {
 
     file.unlink(filePath, (err) => {
       if (err) {
-        console.error(err)
+        consola.error(err)
         reject(filePath)
       } else {
-        console.log(`delete file:${filePath}`)
+        consola.success(`delete file:${filePath}`)
         resolve(filePath)
       }
     });
   })
 };
 
+
+export const getLocalFiles = (localFolder: string) => {
+
+  return new Promise((resolve, reject) => {
+    file.readdir(localFolder, (err, files: string[]) => {
+      if (err) {
+        return reject([])
+      }
+      return resolve(files);
+    });
+  })
+
+};

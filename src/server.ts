@@ -13,11 +13,79 @@ import {setFileSizeOffers} from "./crons/offersFileSize";
 import {redis} from "./redis";
 import {setCampaignsRecipe} from "./crons/campaignsRecipe";
 import {setFileSizeCampaigns} from "./crons/campaignsFileSize";
+import {encrypt, decrypt, getLocalFiles, getFileSize} from "./utils"
 
 const app: Application = express();
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {});
+
+// http://localhost:3001/encodeUrl?offerId=1111&campaignId=22222
+app.get('/encodeUrl', async (req: Request, res: Response) => {
+  try {
+    const campaignId: number = Number(req.query.campaignId)
+    const offerId = Number(req.query.offerId)
+
+    let obj = {
+      offerId,
+      campaignId
+    }
+    let string = JSON.stringify(obj);
+
+    let encryptData = encrypt(string)
+    consola.info('encryptData:', encryptData)
+    const response = {
+      encryptData
+    }
+    res.send(response)
+  } catch (e) {
+    consola.error(e)
+    res.send({err: e})
+  }
+
+})
+
+// http://localhost:3001/decodeUrl?code=
+app.get('/decodeUrl', async (req: Request, res: Response) => {
+
+  interface decodedObj {
+    offerId: number
+    campaignId: number
+  }
+
+  try {
+
+    const code: string = String(req.query.code)
+    const decodedString: string = decrypt(code)
+    const formatCode: decodedObj = JSON.parse(decodedString!)
+
+    res.json(formatCode)
+  } catch (e) {
+    consola.error(e)
+    res.json({err: e})
+  }
+})
+
+// http://localhost:3001/files
+app.get('/files', async (req: Request, res: Response) => {
+  try {
+    let files = await getLocalFiles('/tmp/co-recipe')
+    let filesFormat = []
+    // @ts-ignore
+    for (const file of files) {
+      let filePath: string = `/tmp/co-recipe/${file}`
+      let size = await getFileSize(filePath)
+      filesFormat.push({file: filePath, size: size})
+
+    }
+
+    res.json(filesFormat)
+  } catch (e) {
+    res.json({err: e})
+  }
+
+})
+
 
 app.get('/recipe', async (req: Request, res: Response) => {
 
@@ -109,19 +177,17 @@ io.on('connect', async (socket: Socket) => {
   consola.info(`connect id`, socket.id)
 })
 
-if (process.env.ENV !== 'development') {
+if (process.env.ENV === 'development') {
   setInterval(setCampaignsRecipe, 60000) // 60000 -> 60 sec
   setInterval(setOffersRecipe, 60000) // 60000 -> 60 sec
 
-  setInterval(setFileSizeOffers, 20000) // 6000 -> 6 sec
-  setInterval(setFileSizeCampaigns, 20000) // 6000 -> 6 sec
+  // setInterval(setFileSizeOffers, 20000) // 6000 -> 6 sec
+  // setInterval(setFileSizeCampaigns, 20000) // 6000 -> 6 sec
 }
 
-setTimeout(setCampaignsRecipe, 6000) // 6000 -> 6 sec
-setTimeout(setOffersRecipe, 6000) // 6000 -> 6 sec
+// setTimeout(setCampaignsRecipe, 6000) // 6000 -> 6 sec
+// setTimeout(setOffersRecipe, 6000) // 6000 -> 6 sec
 
-setTimeout(setFileSizeOffers, 20000) // 6000 -> 6 sec
-setTimeout(setFileSizeCampaigns, 20000) // 6000 -> 6 sec
 
 const host: string = process.env.HOST || ''
 const port: number = parseInt(process.env.PORT || '3001')
